@@ -1,9 +1,11 @@
 //! This contract demonstrates a sample implementation of the Soroban token
 //! interface.
-use crate::admin::{has_administrator, read_administrator, write_administrator};
+use crate::library::access::admin::{has_administrator, read_administrator, write_administrator};
 use crate::allowance::{read_allowance, spend_allowance, write_allowance};
 use crate::balance::{read_balance, receive_balance, spend_balance};
 use crate::metadata::{read_decimal, read_name, read_symbol, write_metadata};
+use crate::library::features::mintable::{mint, check_nonnegative_amount};
+
 #[cfg(test)]
 use crate::storage_types::{AllowanceDataKey, AllowanceValue, DataKey};
 use crate::storage_types::{INSTANCE_BUMP_AMOUNT, INSTANCE_LIFETIME_THRESHOLD};
@@ -12,18 +14,29 @@ use soroban_sdk::{contract, contractimpl, Address, Env, String};
 use soroban_token_sdk::metadata::TokenMetadata;
 use soroban_token_sdk::TokenUtils;
 
-fn check_nonnegative_amount(amount: i128) {
-    if amount < 0 {
-        panic!("negative amount is not allowed: {}", amount)
-    }
-}
+
 
 #[contract]
 pub struct Token;
 
+
+  pub fn pre_mint(e: Env, to: Address, amount: i128) {
+        check_nonnegative_amount(amount);
+        let admin = read_administrator(&e);
+        admin.require_auth();
+
+        e.storage()
+            .instance()
+            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+
+        receive_balance(&e, to.clone(), amount);
+        TokenUtils::new(&e).events().mint(admin, to, amount);
+        
+    }
+
 #[contractimpl]
 impl Token {
-    pub fn initialize(e: Env, admin: Address, decimal: u32, name: String, symbol: String) {
+    pub fn initialize(e: Env, admin: Address, decimal: u32, name: String, symbol: String, to: Address, amount: i128) {
         if has_administrator(&e) {
             panic!("already initialized")
         }
@@ -39,21 +52,16 @@ impl Token {
                 name,
                 symbol,
             },
-        )
+        );
+
+        pre_mint(e, to, amount)
     }
 
-    pub fn mint(e: Env, to: Address, amount: i128) {
-        check_nonnegative_amount(amount);
-        let admin = read_administrator(&e);
-        admin.require_auth();
+    // pub fn mint_to(e: Env, to: Address, amount: i128){
+    //     mint(e, to, amount)
+    // }
 
-        e.storage()
-            .instance()
-            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
-
-        receive_balance(&e, to.clone(), amount);
-        TokenUtils::new(&e).events().mint(admin, to, amount);
-    }
+    
 
     pub fn set_admin(e: Env, new_admin: Address) {
         let admin = read_administrator(&e);

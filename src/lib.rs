@@ -1,6 +1,12 @@
 #![no_std]
-
-mod admin;
+mod library{
+    pub mod features {
+        pub mod  mintable;
+    }
+    pub mod access {
+        pub mod admin;
+    }
+}
 mod allowance;
 mod balance;
 mod contract;

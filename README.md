@@ -1,2 +1,1 @@
-# fUSD-token
-# soroban-custom-token
+## custom soroban token

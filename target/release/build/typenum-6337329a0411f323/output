@@ -1,3 +1,0 @@
-cargo:rerun-if-changed=build/main.rs
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=/Users/sholadev/Desktop/Soroban/soroban-examples-main/token/target/release/build/typenum-6337329a0411f323/out/consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=/Users/sholadev/Desktop/Soroban/soroban-examples-main/token/target/release/build/typenum-6337329a0411f323/out/op.rs
